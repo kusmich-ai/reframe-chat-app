@@ -82,16 +82,26 @@
       return (
         <div className="h-screen w-full bg-black flex flex-col">
           <div className="border-b border-zinc-800 p-6">
-            <h1 className="text-2xl font-light text-amber-500">Chat</h1>
+            <div className="max-w-2xl mx-auto">
+              <img src="/logo.png" alt="Logo" className="h-8" />
+            </div>
+          </div>
+
+          {/* Title and Description Section */}
+          <div className="border-b border-zinc-800 px-6 py-8">
+            <div className="max-w-2xl mx-auto text-center">
+              <h1 className="text-3xl font-light text-amber-500 mb-3">The Reframe Protocol</h1>
+              <p className="text-zinc-400 font-light">To identify and update distorted or limiting mental models in real time by interrogating the story the mind is telling about an event and consciously replacing it with an interpretation that restores agency, calm, and clarity.</p>
+            </div>
           </div>
 
           <div className="flex-1 overflow-y-auto px-6 py-8">
             {messages.length === 0 ? (
               <div className="h-full flex items-center justify-center">
-                <p className="text-zinc-600 text-lg font-light">Start a conversation...</p>
+                <p className="text-zinc-600 text-lg font-light">What just happened? Or What am I reacting to?</p>
               </div>
             ) : (
-              <div className="max-w-3xl mx-auto space-y-6">
+              <div className="max-w-2xl mx-auto space-y-6">
                 {messages.map((message, index) => (
                   <div
                     key={index}
@@ -126,7 +136,7 @@
           </div>
 
           <div className="border-t border-zinc-800 p-6">
-            <div className="max-w-3xl mx-auto">
+            <div className="max-w-2xl mx-auto">
               <div className="flex gap-3 items-end">
                 <div className="flex-1 bg-zinc-950 border border-zinc-800 rounded-lg focus-within:border-amber-500 transition-colors">
                   <textarea
