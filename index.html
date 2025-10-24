@@ -1,35 +1,162 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
-  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-  <meta http-equiv="Content-Style-Type" content="text/css">
-  <title></title>
-  <meta name="Generator" content="Cocoa HTML Writer">
-  <meta name="CocoaVersion" content="2575.7">
-  <style type="text/css">
-    p.p1 {margin: 0.0px 0.0px 0.0px 0.0px; font: 12.0px Helvetica}
-    p.p2 {margin: 0.0px 0.0px 0.0px 0.0px; font: 12.0px Helvetica; min-height: 14.0px}
-  </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chat</title>
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body>
-<p class="p1">&lt;!DOCTYPE html&gt;</p>
-<p class="p1">&lt;html lang="en"&gt;</p>
-<p class="p1">&lt;head&gt;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>&lt;meta charset="UTF-8"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>&lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>&lt;title&gt;Chat&lt;/title&gt;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>&lt;script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"&gt;&lt;/script&gt;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>&lt;script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"&gt;&lt;/script&gt;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>&lt;script src="https://cdn.tailwindcss.com"&gt;&lt;/script&gt;</p>
-<p class="p1">&lt;/head&gt;</p>
-<p class="p1">&lt;body&gt;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>&lt;div id="root"&gt;&lt;/div&gt;</p>
-<p class="p1"><span class="Apple-converted-space">  </span>&lt;script type="module"&gt;</p>
-<p class="p1"><span class="Apple-converted-space">    </span>import { Send, Loader2 } from 'https://cdn.jsdelivr.net/npm/lucide-react@latest/dist/esm/lucide-react.js';</p>
-<p class="p2"><span class="Apple-converted-space">    </span></p>
-<p class="p1"><span class="Apple-converted-space">    </span>// [Paste the updated React component code here]</p>
-<p class="p1"><span class="Apple-converted-space">  </span>&lt;/script&gt;</p>
-<p class="p1">&lt;/body&gt;</p>
-<p class="p1">&lt;/html&gt;</p>
+  <div id="root"></div>
+  
+  <script type="text/babel">
+    const { useState, useRef, useEffect } = React;
+
+    function ClaudeChatInterface() {
+      const [messages, setMessages] = useState([]);
+      const [input, setInput] = useState('');
+      const [isLoading, setIsLoading] = useState(false);
+      const messagesEndRef = useRef(null);
+      const inputRef = useRef(null);
+
+      const scrollToBottom = () => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+      };
+
+      useEffect(() => {
+        scrollToBottom();
+      }, [messages]);
+
+      const sendMessage = async () => {
+        if (!input.trim() || isLoading) return;
+
+        const userMessage = input.trim();
+        setInput('');
+        setMessages(prev => [...prev, { role: 'user', content: userMessage }]);
+        setIsLoading(true);
+
+        try {
+          const response = await fetch('/api/chat', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              messages: [...messages, { role: 'user', content: userMessage }].filter(m => m.role === 'user' || m.role === 'assistant'),
+            }),
+          });
+
+          if (!response.ok) {
+            throw new Error('API request failed');
+          }
+
+          const data = await response.json();
+          const assistantMessage = data.content
+            .filter(block => block.type === 'text')
+            .map(block => block.text)
+            .join('\n');
+
+          setMessages(prev => [...prev, { role: 'assistant', content: assistantMessage }]);
+        } catch (error) {
+          console.error('Error:', error);
+          setMessages(prev => [
+            ...prev,
+            { role: 'assistant', content: 'Sorry, there was an error processing your request.' },
+          ]);
+        } finally {
+          setIsLoading(false);
+          inputRef.current?.focus();
+        }
+      };
+
+      const handleKeyPress = (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          sendMessage();
+        }
+      };
+
+      return (
+        <div className="h-screen w-full bg-black flex flex-col">
+          <div className="border-b border-zinc-800 p-6">
+            <h1 className="text-2xl font-light text-amber-500">Chat</h1>
+          </div>
+
+          <div className="flex-1 overflow-y-auto px-6 py-8">
+            {messages.length === 0 ? (
+              <div className="h-full flex items-center justify-center">
+                <p className="text-zinc-600 text-lg font-light">Start a conversation...</p>
+              </div>
+            ) : (
+              <div className="max-w-3xl mx-auto space-y-6">
+                {messages.map((message, index) => (
+                  <div
+                    key={index}
+                    className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                  >
+                    <div
+                      className={`max-w-[80%] rounded-lg px-6 py-4 ${
+                        message.role === 'user'
+                          ? 'bg-zinc-900 text-amber-400 border border-zinc-800'
+                          : 'bg-zinc-950 text-zinc-300 border border-zinc-900'
+                      }`}
+                    >
+                      <p className="whitespace-pre-wrap font-light leading-relaxed">
+                        {message.content}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+                {isLoading && (
+                  <div className="flex justify-start">
+                    <div className="bg-zinc-950 text-amber-500 rounded-lg px-6 py-4 border border-zinc-900">
+                      <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                    </div>
+                  </div>
+                )}
+                <div ref={messagesEndRef} />
+              </div>
+            )}
+          </div>
+
+          <div className="border-t border-zinc-800 p-6">
+            <div className="max-w-3xl mx-auto">
+              <div className="flex gap-3 items-end">
+                <div className="flex-1 bg-zinc-950 border border-zinc-800 rounded-lg focus-within:border-amber-500 transition-colors">
+                  <textarea
+                    ref={inputRef}
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    onKeyPress={handleKeyPress}
+                    placeholder="Type your message..."
+                    disabled={isLoading}
+                    className="w-full bg-transparent text-zinc-300 placeholder-zinc-600 px-4 py-3 resize-none focus:outline-none font-light"
+                    rows="3"
+                  />
+                </div>
+                <button
+                  onClick={sendMessage}
+                  disabled={!input.trim() || isLoading}
+                  className="bg-amber-500 hover:bg-amber-600 disabled:bg-zinc-800 disabled:cursor-not-allowed text-black p-4 rounded-lg transition-colors flex items-center justify-center"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    ReactDOM.render(<ClaudeChatInterface />, document.getElementById('root'));
+  </script>
 </body>
 </html>
