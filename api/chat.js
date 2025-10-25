@@ -19,13 +19,20 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Invalid request: messages array required' });
     }
 
+    // DEBUG LOGGING - ADD THIS
+    console.log('=== DEBUG INFO ===');
+    console.log('API Key exists:', !!process.env.ANTHROPIC_API_KEY);
+    console.log('Project ID:', process.env.ANTHROPIC_PROJECT_ID);
+    console.log('Project ID exists:', !!process.env.ANTHROPIC_PROJECT_ID);
+    console.log('==================');
+
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'x-api-key': process.env.ANTHROPIC_API_KEY,
         'anthropic-version': '2023-06-01',
-        'anthropic-project-id': process.env.ANTHROPIC_PROJECT_ID, // ✅ Using env variable
+        'anthropic-project-id': process.env.ANTHROPIC_PROJECT_ID,
       },
       body: JSON.stringify({
         model: 'claude-sonnet-4-20250514',
