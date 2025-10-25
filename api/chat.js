@@ -19,19 +19,17 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Invalid request: messages array required' });
     }
 
-    const systemPrompt = `You are a helpful AI assistant specialized in The Reframe Protocol - helping users identify and update distorted or limiting mental models in real time.`;
-
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'x-api-key': process.env.ANTHROPIC_API_KEY,
         'anthropic-version': '2023-06-01',
+        'anthropic-project-id': process.env.ANTHROPIC_PROJECT_ID, // ✅ Using env variable
       },
       body: JSON.stringify({
         model: 'claude-sonnet-4-20250514',
         max_tokens: 4096,
-        system: systemPrompt,
         messages: messages,
       }),
     });
