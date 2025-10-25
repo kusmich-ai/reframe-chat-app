@@ -105,10 +105,10 @@
                 <div className="space-y-8 pb-8">
                   {messages.map((message, index) => (
                     <div key={index} className="group">
-                      <div className={`text-sm font-medium mb-2 ${message.role === 'user' ? 'text-zinc-500' : 'text-amber-500'}`}>
+                      <div className={`text-sm font-medium mb-2 ${message.role === 'user' ? 'text-zinc-500 text-right' : 'text-amber-500'}`}>
                         {message.role === 'user' ? 'You' : 'The Reframe Protocol'}
                       </div>
-                      <div className={`${message.role === 'user' ? 'text-zinc-300' : 'text-zinc-200'} font-light leading-relaxed whitespace-pre-wrap`}>
+                      <div className={`${message.role === 'user' ? 'text-zinc-500 text-right' : 'text-zinc-200'} font-light leading-relaxed whitespace-pre-wrap`}>
                         {message.content}
                       </div>
                     </div>
