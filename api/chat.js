@@ -1,4 +1,3 @@
-// api/chat.js
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
@@ -19,10 +18,10 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Invalid request: messages array required' });
     }
 
-    // DEBUG LOGGING - ADD THIS
+    // DEBUG LOGGING
     console.log('=== DEBUG INFO ===');
     console.log('API Key exists:', !!process.env.ANTHROPIC_API_KEY);
-    console.log('Project ID: 'anthropic-project-id': 'prj_IfbxoIbFrplWFYyK4HZqtOgeJcYi', // Hardcoded for testing
+    console.log('Project ID:', process.env.ANTHROPIC_PROJECT_ID);
     console.log('Project ID exists:', !!process.env.ANTHROPIC_PROJECT_ID);
     console.log('==================');
 
@@ -44,7 +43,7 @@ export default async function handler(req, res) {
     if (!response.ok) {
       const error = await response.json();
       console.error('Anthropic API error:', error);
-      return res.status(response.status).json({ error: 'API request failed' });
+      return res.status(response.status).json({ error: 'API request failed', details: error });
     }
 
     const data = await response.json();
@@ -52,6 +51,6 @@ export default async function handler(req, res) {
 
   } catch (error) {
     console.error('Server error:', error);
-    return res.status(500).json({ error: 'Internal server error' });
+    return res.status(500).json({ error: 'Internal server error', details: error.message });
   }
 }
