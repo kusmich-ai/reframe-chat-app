@@ -1,0 +1,7 @@
+{
+  "type": "module",
+  "name": "interpretation-audit-app",
+  "version": "1.0.0",
+  "description": "Interpretation Audit chat application",
+  "dependencies": {}
+}
