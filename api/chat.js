@@ -22,7 +22,7 @@ export default async function handler(req, res) {
     // DEBUG LOGGING - ADD THIS
     console.log('=== DEBUG INFO ===');
     console.log('API Key exists:', !!process.env.ANTHROPIC_API_KEY);
-    console.log('Project ID:', process.env.ANTHROPIC_PROJECT_ID);
+    console.log('Project ID: 'anthropic-project-id': 'prj_IfbxoIbFrplWFYyK4HZqtOgeJcYi', // Hardcoded for testing
     console.log('Project ID exists:', !!process.env.ANTHROPIC_PROJECT_ID);
     console.log('==================');
 
