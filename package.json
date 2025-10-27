@@ -2,7 +2,7 @@
   "type": "module",
   "name": "interpretation-audit-app",
   "version": "1.0.0",
-  "description": "Interpretation Audit chat application",
+  "description": "Reframe Protocol chat application",
   "dependencies": {
     "@supabase/supabase-js": "^2.39.0"
   }
