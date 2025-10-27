@@ -1,3 +1,5 @@
+import { supabase } from '../lib/supabase.js';
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
@@ -12,33 +14,41 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { messages } = req.body;
+    const { messages, userId, conversationId } = req.body;
 
     if (!messages || !Array.isArray(messages)) {
       return res.status(400).json({ error: 'Invalid request: messages array required' });
     }
 
-    // Load the full Interpretation Audit system prompt
-    const systemPrompt = process.env.SYSTEM_PROMPT || `You are a coach guiding users through the Interpretation Audit process - a structured cognitive reframing tool to help people identify and transform limiting mental stories in real-time.
+    if (!userId) {
+      return res.status(400).json({ error: 'userId required' });
+    }
 
-Your role: Act as a mentor who asks guiding questions, one at a time, to walk users through:
-1. What actually happened? (neutral facts)
-2. What story is your mind telling you?
-3. What else could this mean? (using Stoic, Constructivist, Anti-Fragile, or Existential lenses)
-4. What can you do with that?
-5. How would you capture that shift in one line? (From ___ → ___ → ___)
+    // Get user's patterns for context
+    const { data: patterns } = await supabase
+      .from('patterns')
+      .select('*')
+      .eq('user_id', userId)
+      .order('occurrences', { ascending: false })
+      .limit(5);
 
-Key principles:
-- Ask ONE question at a time (never batch questions)
-- No bold headers, step labels, or scaffolding
-- Natural conversational flow
-- Reflect back what they said before advancing
-- Test if reframes land before naming the shift
-- Be gentle but firm - call people on their patterns with care
-- If highly activated, ground them first with breathing
+    // Build context from patterns
+    let patternContext = '';
+    if (patterns && patterns.length > 0) {
+      patternContext = `\n\nUser's recurring patterns from past sessions:\n`;
+      patterns.forEach(p => {
+        patternContext += `- "${p.pattern_type}" (seen ${p.occurrences} times)\n`;
+        if (p.anchors && p.anchors.length > 0) {
+          patternContext += `  Past successful anchors: ${p.anchors.slice(-3).join(', ')}\n`;
+        }
+      });
+    }
 
-You guide them from reactivity → clarity → agency in ~2 minutes.`;
+    // Load system prompt and add pattern context
+    const basePrompt = process.env.SYSTEM_PROMPT || `You are a coach guiding users through the Interpretation Audit process...`;
+    const systemPrompt = basePrompt + patternContext;
 
+    // Call Anthropic API
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -61,7 +71,54 @@ You guide them from reactivity → clarity → agency in ~2 minutes.`;
     }
 
     const data = await response.json();
-    return res.status(200).json(data);
+
+    // Save conversation to database
+    let convId = conversationId;
+    
+    // Create conversation if it doesn't exist
+    if (!convId) {
+      const { data: newConv, error: convError } = await supabase
+        .from('conversations')
+        .insert({
+          user_id: userId,
+          title: messages[0]?.content?.substring(0, 50) || 'New conversation',
+        })
+        .select()
+        .single();
+      
+      if (convError) {
+        console.error('Error creating conversation:', convError);
+      } else {
+        convId = newConv.id;
+      }
+    }
+
+    // Save user message
+    if (convId) {
+      await supabase.from('messages').insert({
+        conversation_id: convId,
+        role: 'user',
+        content: messages[messages.length - 1].content,
+      });
+
+      // Save assistant response
+      await supabase.from('messages').insert({
+        conversation_id: convId,
+        role: 'assistant',
+        content: data.content[0].text,
+      });
+
+      // Update conversation timestamp
+      await supabase
+        .from('conversations')
+        .update({ updated_at: new Date().toISOString() })
+        .eq('id', convId);
+    }
+
+    return res.status(200).json({
+      ...data,
+      conversationId: convId,
+    });
 
   } catch (error) {
     console.error('Server error:', error);
